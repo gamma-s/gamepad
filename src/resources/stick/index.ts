@@ -1,9 +1,13 @@
-'use strict';
+import {IEvent, IStick} from './index.typedef';
 
 /**
  * @class Stick
  */
 class Stick {
+  events: IEvent[];
+  threshold: number;
+  stick: IStick;
+
   /**
    * Initializes the gamepad sticks
    */
@@ -21,51 +25,52 @@ class Stick {
 
   /**
    * Default stick event binding
-   * @param {string} type Event type
-   * @param {callback} callback Callback method for events
-   * @param {condition} condition Checks before conditions after then runs
+   * @param {Object} Event Drag event
+   * @param {string} Event.type Event type
+   * @param {Function} Event.callback Callback method for events
+   * @param {Function} Event.condition Checks before conditions after then runs
    */
-  drag(type, callback, condition) {
-    this._addEvent(
-        type,
-        callback,
-        condition,
-    );
+  drag({type, callback, condition}: IEvent) {
+    this._addEvent({type, callback, condition});
   }
 
   /**
    * Updating stick position and run events when condition is true
    * @param {number} axes Stick x axis
    */
-  update(axes) {
+  update(axes: number[]) {
     this.stick = Object.assign(this.stick, {
       x: 0,
       y: 0,
     });
 
-    this.stick.x = (parseFloat(axes[0].toFixed(2)) * 100);
-    this.stick.y = (parseFloat(axes[1].toFixed(2)) * 100);
+    this.stick.x = parseFloat(axes[0].toFixed(2)) * 100;
+    this.stick.y = parseFloat(axes[1].toFixed(2)) * 100;
 
     for (let i = 0; i < this.events.length; i++) {
       const event = this.events[i];
       if (this.stick.lock === true) {
-        if (event.f.call(this.stick) === true) {
-          if (event.active === false) {
+        if (typeof event.f !== 'undefined') {
+          if (event.f.call(this.stick) === true) {
+            if (event.active === false) {
+              if (event.callback) {
+                event.callback.call(this.stick);
+              }
+              this.stick.pending = false;
+            }
+            event.active = true;
+          }
+        } else {
+          event.active = false;
+        }
+      } else {
+        if (typeof event.f !== 'undefined') {
+          if (event.f.call(this.stick) === true) {
             if (event.callback) {
               event.callback.call(this.stick);
             }
             this.stick.pending = false;
           }
-          event.active = true;
-        } else {
-          event.active = false;
-        }
-      } else {
-        if (event.f.call(this.stick) === true) {
-          if (event.callback) {
-            event.callback.call(this.stick);
-          }
-          this.stick.pending = false;
         }
       }
     }
@@ -80,12 +85,13 @@ class Stick {
 
   /**
    * Adds neccesarry stick events
-   * @param {string} type Event type
-   * @param {callback} callback Callback method for events
-   * @param {condition} condition Checks before conditions after then runs
+   * @param {Object} Event Drag event
+   * @param {string} Event.type Event type
+   * @param {Function} Event.callback Callback method for events
+   * @param {Function} Event.condition Checks before conditions after then runs
    * callback method.
    */
-  _addEvent(type, callback, condition) {
+  _addEvent({type, callback, condition}: IEvent) {
     switch (type) {
       case 'UP': {
         const f = () => {

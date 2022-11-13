@@ -1,15 +1,18 @@
-'use strict';
-
 /**
  * @class Button
  */
 class Button {
+  gamepad: Gamepad;
+  layout: string[];
+  status: Array<number | null>;
+  pressEvents: {[key: number]: ((index: number, next: () => void) => void)[]};
+  releaseEvents: {[key: number]: ((index: number, next: () => void) => void)[]};
   /**
    * Initializes the gamepad buttons
    * @param {Gamepad} gamepad Browser gamepad object
    * @param {string} layout Gamepad layout
    */
-  constructor(gamepad, layout) {
+  constructor(gamepad: Gamepad, layout: string[]) {
     this.gamepad = gamepad;
     this.layout = layout;
 
@@ -22,7 +25,7 @@ class Button {
    * Update button status
    * @param {GamepadButton[]} buttons Gamepad buttons
    */
-  update(buttons) {
+  update(buttons: GamepadButton[]) {
     for (let i = 0; i < buttons.length; i++) {
       const button = buttons[i];
       if (button.value > 0 || button.pressed === true) {
@@ -47,9 +50,9 @@ class Button {
   /**
    * Controller button press
    * @param {string|number} button Button name or index
-   * @param {Object} callback Runs this method when specified button pressed
+   * @param {Function} callback Runs this method when specified button pressed
    */
-  onPress(button, callback) {
+  onPress(button: string | number, callback: () => void): void {
     if (typeof button === 'number') {
       this.pressEvents[button] = [...this.pressEvents[button], callback];
     } else {
@@ -64,9 +67,9 @@ class Button {
   /**
    * Controller button release
    * @param {string|number} button Button name or index
-   * @param {Object} callback Runs this method when specified button released
+   * @param {Function} callback Runs this method when specified button released
    */
-  onRelease(button, callback) {
+  onRelease(button: string | number, callback: () => void): void {
     if (typeof button === 'number') {
       this.releaseEvents[button] = [...this.releaseEvents[button], callback];
     } else {
@@ -81,18 +84,14 @@ class Button {
   /**
    * Button event binding middleware
    * @param {Array} queue Event queue
-   * @return {index}
+   * @return {number} Event queue length
    */
-  _next(queue) {
+  _next(queue: ((index: number, next: () => void) => void)[]): number {
     let index = 0;
 
     const next = () => {
       if (queue[index]) {
-        queue[index].call(
-            this.gamepad,
-            index++,
-            next,
-        );
+        queue[index].call(this.gamepad, index++, next);
       }
     };
 
@@ -108,7 +107,7 @@ class Button {
    * @param {string} s Button name
    * @return {number} Button number
    */
-  _toButton(s) {
+  _toButton(s: string): number {
     return this.layout.indexOf(s);
   }
 }
