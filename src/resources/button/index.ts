@@ -51,16 +51,30 @@ class Button {
    * Controller button press
    * @param {string|number} button Button name or index
    * @param {Function} callback Runs this method when specified button pressed
+   * @param {boolean} clear Whether to clear the event queue
    */
-  onPress(button: string | number, callback: () => void): void {
+  onPress(
+    button: string | number,
+    callback: () => void,
+    clear?: boolean
+  ): void {
     if (typeof button === 'number') {
-      this.pressEvents[button] = [...this.pressEvents[button], callback];
+      if (clear === true) {
+        this.pressEvents[button] = [callback];
+      } else {
+        this.pressEvents[button] = [...this.pressEvents[button], callback];
+      }
     } else {
       const buttonCode = this._toButton(button);
-      this.pressEvents[buttonCode] = [
-        ...this.pressEvents[buttonCode],
-        callback,
-      ];
+
+      if (clear === true) {
+        this.pressEvents[buttonCode] = [callback];
+      } else {
+        this.pressEvents[buttonCode] = [
+          ...this.pressEvents[buttonCode],
+          callback,
+        ];
+      }
     }
   }
 
